@@ -26,39 +26,86 @@ public_users.post("/register", (req,res) => {
 //   return res.status(300).json({message: "Yet to be implemented"});
 });
 
+
+const fetchBooks =() =>{
+    return new Promise((resolve,reject) => {
+      setTimeout(() => {
+        resolve(books);
+      }, 1000);
+    });
+  };
+
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
   //Write your code here
-  res.status(200).send(JSON.stringify(books, null, 2));
+  fetchBooks()
+  .then(bookList => {
+    res.status(200).send(JSON.stringify(bookList,null,2));
+  })
+  .catch(error => {
+    res.status(500).json({message:'Error fetching books',error:error.message });
+  });
+  
 });
+
+const fetchBooksisbn = (isbn)=>{
+    return new Promise((resolve,reject)=>{
+        setTimeout(()=>{
+            const book = books[isbn]
+            if(book){
+                resolve(book)
+            }else {
+                reject(new Error('Book not found'));
+              }
+        },2000)
+
+    })
+}
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
-  //Write your code hereconst { isbn } = req.params;
-  const book = books[isbn];
-  if (!book) {
-    return res.status(404).json({ message: "Book not found" });
-  }
-  return res.status(200).json(book);
-//   return res.status(300).json({message: "Yet to be implemented"});
+  //Write your code here
+  const { isbn } = req.params;
+
+  fetchBooksisbn(isbn)
+  .then(book => {
+    return res.status(200).json(book);
+  })
+  .catch(error => {
+    res.status(404).json({ message: error.message });
+  });
+
  });
   
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
-    const author = req.params.author;
-    let filteredBooks = [];
-  
-    for (let isbn in books) {
-      if (books[isbn].author === author) {
-        filteredBooks.push(books[isbn]);
+
+const fetchBooksAuthor = (author) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      let filteredBooks = [];
+      for (let isbn in books) {
+        if (books[isbn].author === author) {
+          filteredBooks.push(books[isbn]);
+        }
       }
-    }
-  
-    if (filteredBooks.length === 0) {
-      return res.status(404).json({ message: "No books found by this author" });
-    }
-  
-    return res.status(200).json(filteredBooks);
+      if (filteredBooks.length > 0) {
+        resolve(filteredBooks);
+      } else {
+        reject(new Error('book not fnd'));
+      }
+    }, 2000);
+  });
+};
+public_users.get('/author/:author',function (req, res) {
+    // const author = req.params.author;
+    const author=req.params.author;
+  fetchBooksAuthor(author)
+    .then(books=>{
+      res.status(200).json(books);
+    })
+    .catch(error => {
+      res.status(404).json({message:error.message });
+    });
 });
 
 // Get all books based on title
